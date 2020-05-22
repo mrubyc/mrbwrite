@@ -1,6 +1,6 @@
 # mruby/c irep file writer.
 
-# What is this?
+## What is this?
 
 コンパイル後のmrbファイルを、シリアル通信を使ってターゲットに転送する。
 
@@ -23,6 +23,11 @@ install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore" "@executab
 install_name_tool -change "@rpath/QtSerialPort.framework/Versions/5/QtSerialPort" "@executable_path/QtSerialPort" mrbwrite
 ```
 
+## How to use
+```
+./mrbwrite --showline   # show all lines
+./mrbwrite -l cu.USBSERIAL -s 57600 PROG1.mrb PROG2.mrb ...
+```
 
 
 # 通信プロトコル

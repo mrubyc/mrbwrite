@@ -1,0 +1,12 @@
+# Executables
+mrbwrite
+mrbwrite.exe
+
+# Temporary files
+*.o
+*.obj
+*~
+moc_*
+.qmake.stash
+Makefile
+mrbwrite.pro.user
