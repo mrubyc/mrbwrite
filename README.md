@@ -2,15 +2,18 @@
 
 # What is this?
 
-コンパイル後のmrbファイルを、シリアル通信を使って
+コンパイル後のmrbファイルを、シリアル通信を使ってターゲットに転送する。
 
-# HowToCompile
+## How to compile
+
+クロスプラットフォームのために、Qt (https://www.qt.io/jp) を使用している。まずQtをインストール (https://download.qt.io/official_releases/qt/) してから、下記コマンドにてコンパイルする。
+
 ```
 qmake
-make
+make  # or gmake, nmake
 ```
 
-## deploy
+## Deploy
 
 ### for Mac
 ```
