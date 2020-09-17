@@ -3,8 +3,8 @@
   mruby/c irep file writer.
 
   <pre>
-  Copyright (C) 2017-2018 Kyushu Institute of Technology.
-  Copyright (C) 2017-2018 Shimane IT Open-Innovation Center.
+  Copyright (C) 2017-2020 Kyushu Institute of Technology.
+  Copyright (C) 2017-2020 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
@@ -127,6 +127,7 @@ void MrbWrite::run()
     connect target
   */
   if( connect_target() != 0 ) goto DONE;
+  clear_bytecode();
 
   /*
     open .mrb files and write target.
@@ -143,6 +144,11 @@ void MrbWrite::run()
 
     if( flag_error ) goto DONE;
   }
+
+  /*
+    display program list
+   */
+  show_prog();
 
   /*
     execute program
@@ -227,7 +233,7 @@ int MrbWrite::connect_target()
   // check target version
   serial_port_.write("version\r\n");
   QString ver = get_line();
-  if( !ver.startsWith("+OK mruby/c PSoC_5LP v1.00 ")) {
+  if( !ver.startsWith("+OK mruby/c v2.1")) {
     qout_ << tr("version mismatch.") << endl;
     qout_ << tr(" require 1.00") << endl;
     qout_ << tr(" connected ") << ver << endl;
@@ -240,6 +246,44 @@ int MrbWrite::connect_target()
   return 0;
 }
 
+
+//================================================================
+/*! clear existed mruby/c bytecode.
+*/
+int MrbWrite::clear_bytecode()
+{
+  qout_ << tr("Clear existed bytecode.") << endl;
+
+  serial_port_.write("clear\r\n");
+  VERBOSE(tr("Send 'clear'"));
+
+  QString r = get_line();
+  VERBOSE(tr("Receive '%1'").arg(r.trimmed()));
+  if( !r.startsWith("+OK")) {
+    qout_ << tr("Bytecode clear error.") << endl;
+    return 1;
+  }
+  VERBOSE("Clear bytecode OK.");
+
+  return 0;
+}
+
+
+//================================================================
+/*! show program list
+*/
+int MrbWrite::show_prog()
+{
+  serial_port_.write("showprog\r\n");
+
+  while( 1 ) {
+    QString r = get_line();
+    if( r.startsWith("+DONE")) break;
+    qout_ << r;
+  }
+
+  return 0;
+}
 
 
 //================================================================

@@ -3,8 +3,8 @@
   mruby/c irep file writer.
 
   <pre>
-  Copyright (C) 2017-2018 Kyushu Institute of Technology.
-  Copyright (C) 2017-2018 Shimane IT Open-Innovation Center.
+  Copyright (C) 2017-2020 Kyushu Institute of Technology.
+  Copyright (C) 2017-2020 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
@@ -41,6 +41,8 @@ private:
   int serial_baud_rate_;	//!< serial baud rate.
 
   int connect_target();
+  int clear_bytecode();
+  int show_prog();
   int write_file( QIODevice &file );
   void execute_program();
   int setup_serial_port();

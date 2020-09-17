@@ -1,4 +1,4 @@
-# mruby/c irep file writer.
+# mruby/c mrb file writer.
 
 ## What is this?
 
@@ -49,7 +49,7 @@ install_name_tool -change "@rpath/QtSerialPort.framework/Versions/5/QtSerialPort
 ### 例
 ```
 [SEND] version
-[RECV] +OK mruby/c PSoC_5LP v1.00 (2018/02/22)
+[RECV] +OK mruby/c v1.00
 [SEND] BADCOMMAND
 [RECV] -ERR Illegal command.
 ```
@@ -59,6 +59,9 @@ install_name_tool -change "@rpath/QtSerialPort.framework/Versions/5/QtSerialPort
 <dl>
   <dt>version
   <dd>バージョン表示
+
+  <dt>clear
+  <dd>書き込み済みバイトコードの消去
 
   <dt>write (size)
   <dd>mrubyバイトコード書き込み
@@ -71,23 +74,32 @@ install_name_tool -change "@rpath/QtSerialPort.framework/Versions/5/QtSerialPort
 
   <dt>help
   <dd>コマンド一覧表示（人間用）
+
+  <dt>showprog
+  <dd>書き込み済みプログラムサイズ表示（人間用）
 </dl>
 
 
 ## 接続の開始
 
-mrbwrite側からTARGETへ空行（CRLFのみ）を送信することで開始される。
-
+mrbwrite側からターゲットへ空行（CRLFのみ）を送信することで開始される。  
+ターゲットでは、通常は起動後に書き込み済みのプログラムを実行するため、この参照実装では、起動直後の数秒間にCRLFを受信するか、ボード上のSW1が押されるとコマンド受け付けモードに入る。
 
 ## 典型的なmrbファイル書き込み例
 
 ```
 mrbwrite:                :TARGET
    |                        |
-   |  CRLF                  |
+   |  CRLF,CRLF             |
    +----------------------->|
    |                        |
    |  "+OK mruby/c"         |
+   |<-----------------------|
+   |                        |
+   |  "clear"               |
+   +----------------------->|
+   |                        |
+   |  "+OK"                 |
    |<-----------------------|
    |                        |
    |  "write 250"           |
