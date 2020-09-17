@@ -9,15 +9,19 @@
 
   This file is distributed under BSD 3-Clause License.
 
-  (usage)
-  in main program.
-
-  const uint8_t CYCODE mruby_bytecode[MRBC_SIZE_IREP_STRAGE];  // Flash ROM
-
-  if( mrbc_monitor_or_exec() ) mrbc_monitor_run();
-  mrubyc_start();
-
   </pre>
+*/
+
+/* Flash ROM structure.
+  (e.g. MRBC_MAX_BYTECODES = 4)
+ 0000 size1	(uint16_t * 4)
+ 0002 size2
+ 0004 size3
+ 0006 size4
+ 0008 IREP1	(size1 bytes)
+ xxxx IREP2	(size2 bytes)
+ xxxx IREP3	(size3 bytes)
+ xxxx IREP4	(size4 bytes)
 */
 
 
