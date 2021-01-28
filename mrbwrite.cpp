@@ -3,8 +3,8 @@
   mruby/c irep file writer.
 
   <pre>
-  Copyright (C) 2017-2020 Kyushu Institute of Technology.
-  Copyright (C) 2017-2020 Shimane IT Open-Innovation Center.
+  Copyright (C) 2017-2021 Kyushu Institute of Technology.
+  Copyright (C) 2017-2021 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
@@ -233,11 +233,11 @@ int MrbWrite::connect_target()
   // check target version
   serial_port_.write("version\r\n");
   QString ver = get_line();
-  if( !ver.startsWith("+OK mruby/c v2.1")) {
+  if( !ver.startsWith("+OK mruby/c PSoC_5LP v1.00 ") &&
+      !ver.startsWith("+OK mruby/c v2.1")) {
     qout_ << tr("version mismatch.") << endl;
     qout_ << tr(" require 1.00") << endl;
     qout_ << tr(" connected ") << ver << endl;
-
 
     return 1;
   }

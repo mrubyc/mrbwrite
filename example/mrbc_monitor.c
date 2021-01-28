@@ -4,8 +4,8 @@
   using USBUART.
 
   <pre>
-  Copyright (C) 2018-2020 Kyushu Institute of Technology.
-  Copyright (C) 2018-2020 Shimane IT Open-Innovation Center.
+  Copyright (C) 2018-2021 Kyushu Institute of Technology.
+  Copyright (C) 2018-2021 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
@@ -30,7 +30,7 @@
 
 #include "mrbc_monitor.h"
 
-#define MRUBYC_VERSION_STRING   "mruby/c v2.1 PSoC5LP"
+#define MRUBYC_VERSION_STRING   "mruby/c PSoC_5LP v1.00 "
 #define USBUART_BUFFER_SIZE 64	// max 64bytes. see USBFS manual.
 
 
@@ -377,6 +377,7 @@ int mrbc_monitor_or_exec(void)
     CyDelay( 10 );
   }
 
+  LED1_Write(0);
   return i != MAX_WAIT_CYCLE;
 }
 
@@ -395,6 +396,7 @@ int mrbc_monitor_run(void)
     "  clear\r\n"
     "  write [size]\r\n"
     "  showprog\r\n";
+  int flag_clear = 0;
 
   usbuart_clear();
 
@@ -435,11 +437,16 @@ int mrbc_monitor_run(void)
 
     if( strcmp(token, "clear") == 0 ) {
       clear_bytecode();
+      flag_clear = 1;
       usbuart_put_string( "+OK\r\n" );
       goto DONE;
     }
 
     if( strcmp(token, "write") == 0 ) {
+      if( !flag_clear ) {
+	clear_bytecode();
+	flag_clear = 1;
+      }
       token = strtok( NULL, ws );
       if( token == NULL ) {
 	usbuart_put_string( "-ERR\r\n" );
