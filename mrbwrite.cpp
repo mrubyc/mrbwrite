@@ -11,6 +11,8 @@
   </pre>
 */
 
+#define VERSION_NUMBER "1.02"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <QCoreApplication>
@@ -39,7 +41,7 @@ MrbWrite::MrbWrite( int argc, char *argv[] )
     serial_baud_rate_(57600)
 {
   setApplicationName("mrbwrite");
-  setApplicationVersion("1.01");
+  setApplicationVersion(VERSION_NUMBER);
 
   /*
     parse command line options.
@@ -206,15 +208,18 @@ int MrbWrite::connect_target()
 
   // trying to connect target
   VERBOSE("Trying to connect target.");
-  for( i = 0; i < 10; i++ ) {
+  const int MAX_CONN = 10;
+  for( i = 0; i < MAX_CONN; i++ ) {
     if( serial_port_.error() != QSerialPort::NoError ) {
       VERBOSE("Serial port error has detected. Retrying.");
       serial_port_.close();
       sleep_ms( 200 );
       goto REDO;
     }
+    sleep_ms( 1000 );
     serial_port_.clear();
     serial_port_.write("\r\n");
+    serial_port_.flush();
     VERBOSE("\nSend '\\r\\n' to target for connection start.");
     qout_ << ".";
     qout_.flush();
@@ -224,11 +229,13 @@ int MrbWrite::connect_target()
     if( r.startsWith("+OK mruby/c")) break;
   }
   qout_ << "\r                 \r";
-  if( i == 10 ) {
+  if( i == MAX_CONN ) {
     qout_ << tr("Can't connect target device.") << endl;
     return 1;
   }
   qout_ << tr("OK.") << endl;
+  sleep_ms( 200 );
+  serial_port_.clear();
 
   // check target version
   serial_port_.write("version\r\n");
@@ -236,8 +243,8 @@ int MrbWrite::connect_target()
   if( !ver.startsWith("+OK mruby/c PSoC_5LP v1.00 ") &&
       !ver.startsWith("+OK mruby/c v2.1")) {
     qout_ << tr("version mismatch.") << endl;
-    qout_ << tr(" require 1.00") << endl;
-    qout_ << tr(" connected ") << ver << endl;
+    qout_ << tr(" require v1.00 or v2.1") << endl;
+    qout_ << tr(" connected '") << ver << "'" << endl;
 
     return 1;
   }
@@ -275,9 +282,11 @@ int MrbWrite::clear_bytecode()
 int MrbWrite::show_prog()
 {
   serial_port_.write("showprog\r\n");
+  QString r = get_line();
 
   while( 1 ) {
     QString r = get_line();
+    if( r.isEmpty() ) break;
     if( r.startsWith("+DONE")) break;
     qout_ << r;
   }
