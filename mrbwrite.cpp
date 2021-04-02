@@ -140,7 +140,7 @@ void MrbWrite::run()
       qout_ << tr("Can't open file '%1'.").arg(filename) << endl;
       goto DONE;
     }
-    qout_ << tr("Writeing %1").arg(filename) << endl;
+    qout_ << tr("Writing %1").arg(filename) << endl;
     flag_error = write_file( file );
     file.close();
 
