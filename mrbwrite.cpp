@@ -226,7 +226,7 @@ int MrbWrite::connect_target()
 
     QString r = get_line();
     VERBOSE(tr("Receive '%1'").arg(r.trimmed()));
-    if( r.startsWith("+OK mruby/c")) break;
+    if( r == "+OK mruby/c\r\n" ) break;
   }
   qout_ << "\r                 \r";
   if( i == MAX_CONN ) {
@@ -238,8 +238,13 @@ int MrbWrite::connect_target()
   serial_port_.clear();
 
   // check target version
+  VERBOSE(tr("Check target version."));
   serial_port_.write("version\r\n");
+  VERBOSE(tr("Send 'version'"));
+
   QString ver = get_line();
+  VERBOSE(tr("Receive '%1'").arg(ver.trimmed()));
+
   if( !ver.startsWith("+OK mruby/c PSoC_5LP v1.00 ") &&
       !ver.startsWith("+OK mruby/c v2.1")) {
     qout_ << tr("version mismatch.") << endl;
@@ -248,7 +253,7 @@ int MrbWrite::connect_target()
 
     return 1;
   }
-  VERBOSE("Target firmware version OK.");
+  VERBOSE(tr("Target firmware version OK."));
 
   return 0;
 }
