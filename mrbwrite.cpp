@@ -213,10 +213,10 @@ int MrbWrite::connect_target()
     if( serial_port_.error() != QSerialPort::NoError ) {
       VERBOSE("Serial port error has detected. Retrying.");
       serial_port_.close();
-      sleep_ms( 200 );
+      sleep_ms( 100 );
       goto REDO;
     }
-    sleep_ms( 1000 );
+    sleep_ms( 100 );
     serial_port_.clear();
     serial_port_.write("\r\n");
     serial_port_.flush();
@@ -234,7 +234,7 @@ int MrbWrite::connect_target()
     return 1;
   }
   qout_ << tr("OK.") << endl;
-  sleep_ms( 200 );
+  sleep_ms( 100 );
   serial_port_.clear();
 
   // check target version
