@@ -3,15 +3,15 @@
   mruby/c irep file writer.
 
   <pre>
-  Copyright (C) 2017-2021 Kyushu Institute of Technology.
-  Copyright (C) 2017-2021 Shimane IT Open-Innovation Center.
+  Copyright (C) 2017-2022 Kyushu Institute of Technology.
+  Copyright (C) 2017-2022 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
   </pre>
 */
 
-#define VERSION_NUMBER "1.02"
+#define VERSION_NUMBER "1.03"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -220,12 +220,12 @@ int MrbWrite::connect_target()
     serial_port_.clear();
     serial_port_.write("\r\n");
     serial_port_.flush();
-    VERBOSE("\nSend '\\r\\n' to target for connection start.");
+    VERBOSE("\n==> '\\r\\n' to target for connection start.");
     qout_ << ".";
     qout_.flush();
 
     QString r = get_line();
-    VERBOSE(tr("Receive '%1'").arg(r.trimmed()));
+    VERBOSE(tr("<== '%1'").arg(r.trimmed()));
     if( r == "+OK mruby/c\r\n" ) break;
   }
   qout_ << "\r                 \r";
@@ -240,10 +240,10 @@ int MrbWrite::connect_target()
   // check target version
   VERBOSE(tr("Check target version."));
   serial_port_.write("version\r\n");
-  VERBOSE(tr("Send 'version'"));
+  VERBOSE(tr("==> 'version'"));
 
   QString ver = get_line();
-  VERBOSE(tr("Receive '%1'").arg(ver.trimmed()));
+  VERBOSE(tr("<== '%1'").arg(ver.trimmed()));
 
   if( !ver.startsWith("+OK mruby/c PSoC_5LP v1.00 ") &&
       !ver.startsWith("+OK mruby/c v2.1")) {
@@ -267,10 +267,10 @@ int MrbWrite::clear_bytecode()
   qout_ << tr("Clear existed bytecode.") << endl;
 
   serial_port_.write("clear\r\n");
-  VERBOSE(tr("Send 'clear'"));
+  VERBOSE(tr("==> 'clear'"));
 
   QString r = get_line();
-  VERBOSE(tr("Receive '%1'").arg(r.trimmed()));
+  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
   if( !r.startsWith("+OK")) {
     qout_ << tr("Bytecode clear error.") << endl;
     return 1;
@@ -287,14 +287,17 @@ int MrbWrite::clear_bytecode()
 int MrbWrite::show_prog()
 {
   serial_port_.write("showprog\r\n");
-  QString r = get_line();
+  VERBOSE(tr("==> 'showprog'"));
+
+  QString r;
 
   while( 1 ) {
-    QString r = get_line();
+    r = get_line();
     if( r.isEmpty() ) break;
     if( r.startsWith("+DONE")) break;
     qout_ << r;
   }
+  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
 
   return 0;
 }
@@ -312,9 +315,9 @@ int MrbWrite::write_file( QIODevice &file )
 
   QString s = QString("write %1\r\n").arg( filesize );
   serial_port_.write(s.toLocal8Bit());
-  VERBOSE(tr("Send '%1'").arg(s.trimmed()));
+  VERBOSE(tr("==> '%1'").arg(s.trimmed()));
   QString r = get_line();
-  VERBOSE(tr("Receive '%1'").arg(r.trimmed()));
+  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
   if( !r.startsWith("+OK ")) {
     qout_ << tr("command error. '%1'").arg(r.trimmed()) << endl;
     return 1;
@@ -328,7 +331,7 @@ int MrbWrite::write_file( QIODevice &file )
   }
   VERBOSE(tr("Send %1 bytes done.").arg(filesize));
   r = get_line();
-  VERBOSE(tr("Receive '%1'").arg(r.trimmed()));
+  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
   if( !r.startsWith("+DONE")) {
     qout_ << tr("transfer error. '%1'").arg(r.trimmed()) << endl;
     return 1;
@@ -349,7 +352,11 @@ void MrbWrite::execute_program()
   qout_ << tr("Start mruby/c program.") << endl;
 
   serial_port_.write("execute\r\n");
+  VERBOSE("==> 'execute'");
+
   QString r = get_line();
+  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
+
   if( !r.startsWith("+OK ")) {
     qout_ << tr("execute error. '%1'").arg(r.trimmed()) << endl;
   }
