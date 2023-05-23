@@ -3,15 +3,15 @@
   mruby/c irep file writer.
 
   <pre>
-  Copyright (C) 2017-2022 Kyushu Institute of Technology.
-  Copyright (C) 2017-2022 Shimane IT Open-Innovation Center.
+  Copyright (C) 2017-2023 Kyushu Institute of Technology.
+  Copyright (C) 2017-2023 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
   </pre>
 */
 
-#define VERSION_NUMBER "1.03"
+#define VERSION_NUMBER "1.04"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -330,14 +330,23 @@ int MrbWrite::write_file( QIODevice &file )
     serial_port_.waitForBytesWritten();
   }
   VERBOSE(tr("Send %1 bytes done.").arg(filesize));
-  r = get_line();
-  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
-  if( !r.startsWith("+DONE")) {
-    qout_ << tr("transfer error. '%1'").arg(r.trimmed()) << endl;
-    return 1;
-  }
-  qout_ << tr("OK.") << endl;
 
+  while(1) {
+    r = get_line();
+    VERBOSE(tr("<== '%1'").arg(r.trimmed()));
+
+    if( r.isEmpty() ) {
+      qout_ << tr("transfer timeout") << endl;
+      return 1;
+    }
+    if( r.startsWith("+DONE")) break;
+    if( r.startsWith("-")) {
+      qout_ << tr("transfer error. '%1'").arg(r.trimmed()) << endl;
+      return 1;
+    }
+  }
+
+  qout_ << tr("OK.") << endl;
   return 0;
 }
 
