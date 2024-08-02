@@ -5,8 +5,13 @@ mrbwrite.exe
 # Temporary files
 *.o
 *.obj
+*.bak
 *~
 moc_*
 .qmake.stash
 Makefile
 mrbwrite.pro.user
+
+# mac
+.DS_Store
+._.DS_Store
