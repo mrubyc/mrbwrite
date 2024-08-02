@@ -11,7 +11,8 @@
   </pre>
 */
 
-#define VERSION_NUMBER "1.04"
+#define APPLICATION_VERSION "1.2.0"
+#define PROTOCOL_VERSION "MRBW1.2"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +29,8 @@
 
 #define VERBOSE(s) if( opt_verbose_ ) { qout_ << s << endl; }
 
+const char * const STR_CANCEL = "\x018";
+
 
 //================================================================
 /*! constructor
@@ -41,7 +44,7 @@ MrbWrite::MrbWrite( int argc, char *argv[] )
     serial_baud_rate_(57600)
 {
   setApplicationName("mrbwrite");
-  setApplicationVersion(VERSION_NUMBER);
+  setApplicationVersion(APPLICATION_VERSION);
 
   /*
     parse command line options.
@@ -140,6 +143,7 @@ void MrbWrite::run()
       qout_ << tr("Can't open file '%1'.").arg(filename) << endl;
       goto DONE;
     }
+
     qout_ << tr("Writing %1").arg(filename) << endl;
     flag_error = write_file( file );
     file.close();
@@ -168,7 +172,6 @@ void MrbWrite::run()
   VERBOSE( tr("Program end"));
   exit( flag_error );
 }
-
 
 
 //================================================================
@@ -224,9 +227,9 @@ int MrbWrite::connect_target()
     qout_ << ".";
     qout_.flush();
 
-    QString r = get_line();
+    QString r = get_line(50);
     VERBOSE(tr("<== '%1'").arg(r.trimmed()));
-    if( r == "+OK mruby/c\r\n" ) break;
+    if( r.startsWith("+OK mruby/c") ) break;
   }
   qout_ << "\r                 \r";
   if( i == MAX_CONN ) {
@@ -242,20 +245,26 @@ int MrbWrite::connect_target()
   serial_port_.write("version\r\n");
   VERBOSE(tr("==> 'version'"));
 
-  QString ver = get_line();
-  VERBOSE(tr("<== '%1'").arg(ver.trimmed()));
+  QString target_version = get_line().trimmed();
+  VERBOSE(tr("<== '%1'").arg(target_version));
 
-  if( !ver.startsWith("+OK mruby/c PSoC_5LP v1.00 ") &&
-      !ver.startsWith("+OK mruby/c v2.1")) {
-    qout_ << tr("version mismatch.") << endl;
-    qout_ << tr(" require v1.00 or v2.1") << endl;
-    qout_ << tr(" connected '") << ver << "'" << endl;
-
-    return 1;
+  // (for backword compatibility)
+  if( target_version.startsWith("+OK mruby/c PSoC_5LP v1.00 ") ||
+      target_version.startsWith("+OK mruby/c v2.1")) {
+    ret = 0;
+  } else {
+    QStringList vers = target_version.split(' ');
+    target_rite_version_ = vers[3];
+    ret = (vers[4] != PROTOCOL_VERSION);
   }
-  VERBOSE(tr("Target firmware version OK."));
 
-  return 0;
+  if( ret ) {
+    qout_ << tr("protocol version mismatch.") << endl;
+  } else {
+    VERBOSE(tr("Target firmware version OK."));
+  }
+
+  return ret;
 }
 
 
@@ -266,17 +275,11 @@ int MrbWrite::clear_bytecode()
 {
   qout_ << tr("Clear existed bytecode.") << endl;
 
-  serial_port_.write("clear\r\n");
-  VERBOSE(tr("==> 'clear'"));
-
-  QString r = get_line();
-  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
-  if( !r.startsWith("+OK")) {
+  if( chat("clear") < 0 ) {
     qout_ << tr("Bytecode clear error.") << endl;
     return 1;
   }
   VERBOSE("Clear bytecode OK.");
-
   return 0;
 }
 
@@ -293,8 +296,8 @@ int MrbWrite::show_prog()
 
   while( 1 ) {
     r = get_line();
-    if( r.isEmpty() ) break;
     if( r.startsWith("+DONE")) break;
+    if( r.startsWith( STR_CANCEL )) break;
     qout_ << r;
   }
   VERBOSE(tr("<== '%1'").arg(r.trimmed()));
@@ -312,18 +315,28 @@ int MrbWrite::show_prog()
 int MrbWrite::write_file( QIODevice &file )
 {
   int filesize = file.size();
+  QByteArray header = file.read(8);
 
-  QString s = QString("write %1\r\n").arg( filesize );
-  serial_port_.write(s.toLocal8Bit());
-  VERBOSE(tr("==> '%1'").arg(s.trimmed()));
-  QString r = get_line();
-  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
-  if( !r.startsWith("+OK ")) {
-    qout_ << tr("command error. '%1'").arg(r.trimmed()) << endl;
+  // check RITE version.
+  if( !target_rite_version_.isEmpty() ) {
+    if( target_rite_version_ != header ) {
+      qout_ << "mrb file RITE version mismatch." << endl;
+      return 2;
+    }
+    VERBOSE(tr("RITE version '%1' check OK.").arg(target_rite_version_));
+  }
+
+  // send "write" command
+  QString s = QString("write %1").arg( filesize );
+  if( chat(s.toLocal8Bit()) < 0 ) {
+    qout_ << "command error." << endl;
     return 1;
   }
 
-  for( int i = 0; i < filesize; i++ ) {
+  // send mrb file.
+  serial_port_.write( header );
+
+  for( int i = 0; i < filesize-8; i++ ) {
     char ch;
     file.getChar(&ch);
     serial_port_.putChar(ch);
@@ -331,25 +344,26 @@ int MrbWrite::write_file( QIODevice &file )
   }
   VERBOSE(tr("Send %1 bytes done.").arg(filesize));
 
+  // check status.
   while(1) {
-    r = get_line();
+    QString r = get_line();
     VERBOSE(tr("<== '%1'").arg(r.trimmed()));
 
-    if( r.isEmpty() ) {
+    if( r.startsWith( STR_CANCEL )) {
       qout_ << tr("transfer timeout") << endl;
       return 1;
     }
     if( r.startsWith("+DONE")) break;
-    if( r.startsWith("-")) {
+    if( r.startsWith("-ERR")) {
       qout_ << tr("transfer error. '%1'").arg(r.trimmed()) << endl;
       return 1;
     }
+    qout_ << r << endl;
   }
 
   qout_ << tr("OK.") << endl;
   return 0;
 }
-
 
 
 //================================================================
@@ -360,18 +374,12 @@ void MrbWrite::execute_program()
 {
   qout_ << tr("Start mruby/c program.") << endl;
 
-  serial_port_.write("execute\r\n");
-  VERBOSE("==> 'execute'");
-
-  QString r = get_line();
-  VERBOSE(tr("<== '%1'").arg(r.trimmed()));
-
-  if( !r.startsWith("+OK ")) {
-    qout_ << tr("execute error. '%1'").arg(r.trimmed()) << endl;
+  if( chat("execute") >= 0 ) {
+    qout_ << tr("OK.") << endl;
+  } else {
+    qout_ << tr("execute error.") << endl;
   }
-  qout_ << tr("OK.") << endl;
 }
-
 
 
 //================================================================
@@ -395,24 +403,51 @@ int MrbWrite::setup_serial_port()
 }
 
 
-
 //================================================================
 /*! get a line from serial port with timeout.
 
+  @param	timtout_count	timeout counter.
   @return QString
 */
-QString MrbWrite::get_line()
+QString MrbWrite::get_line( int timeout_count )
 {
-  for( int i = 0; i < 100; i++ ) {
+  for( int i = 0; i < timeout_count; i++ ) {
     if( serial_port_.canReadLine()) {
       return serial_port_.readLine();
     }
     sleep_ms(10);
   }
 
-  return QString("");
+  return QString(STR_CANCEL);	// Timeout
 }
 
+
+//================================================================
+/*! chat
+
+  @param cmd    send command.
+  @return int   0=+OK, 1=+DONE, -1=-ERR, -2=Timeout
+*/
+int MrbWrite::chat( const char *cmd )
+{
+  VERBOSE(tr("==> '%1'").arg(cmd));
+
+  serial_port_.write(cmd);
+  serial_port_.write("\r\n");
+
+  while( 1 ) {
+    QString r = get_line();
+    VERBOSE(tr("<== '%1'").arg(r.trimmed()));
+    if( r.startsWith("+OK")) return 0;
+    if( r.startsWith("+DONE")) return 1;
+    if( r.startsWith("-ERR")) return -1;
+    if( r.startsWith( STR_CANCEL )) {
+      qout_ << "TIMEOUT!" << endl;
+      return -2;
+    }
+    qout_ << r;
+  }
+}
 
 
 //================================================================
@@ -429,7 +464,6 @@ void MrbWrite::show_lines()
     qout_ << s << endl;
   }
 }
-
 
 
 //================================================================

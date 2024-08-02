@@ -39,6 +39,7 @@ private:
   QStringList mrb_files_;	//!< .mrb file filename list.
   QSerialPort serial_port_;	//!< serial port object.
   int serial_baud_rate_;	//!< serial baud rate.
+  QString target_rite_version_;	//!< target board RITE version string.
 
   int connect_target();
   int clear_bytecode();
@@ -46,6 +47,7 @@ private:
   int write_file( QIODevice &file );
   void execute_program();
   int setup_serial_port();
-  QString get_line();
+  QString get_line( int timeout_count = 500 );
+  int chat( const char * );
   void show_lines();
 };

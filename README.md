@@ -6,7 +6,7 @@
 
 ## How to compile
 
-クロスプラットフォームのために、Qt (https://www.qt.io/jp) を使用している。まずQtをインストール (https://download.qt.io/official_releases/qt/) してから、下記コマンドにてコンパイルする。
+クロスプラットフォームのために、Qt5 (https://www.qt.io/jp) を使用している。まずQtをインストール (https://download.qt.io/official_releases/qt/) してから、下記コマンドにてコンパイルする。
 
 ```
 qmake
@@ -14,6 +14,15 @@ make  # or gmake, nmake
 ```
 
 ## Deploy
+
+### for Windows
+
+```
+mkdir ¥PATH¥TO¥DEPLOY¥mrbwrite
+copy mrbwrite.exe ¥PATH¥TO¥DEPLOY¥mrbwrite
+cd ¥PATH¥TO¥DEPLOY¥mrbwrite
+windeployqt mrbwrite.exe
+```
 
 ### for Mac
 ```
@@ -132,3 +141,20 @@ mrbwrite:                :TARGET
    |<-----------------------+
    |                        |
 ```
+
+## バージョンチェック
+
+`version` コマンドを送信することによって、ターゲットのバージョンを得ることができる。
+そのフォーマットは、1つのスペースキャラクタ区切りによる以下のフォーマットが期待される。
+
+(例）
+```
++OK mruby/c v3.3 RITE0300 MRBW1.2
+```
+カラム
+
+1. +OK　　　POP3互換ステータス文字列  
+2. mruby/c　歴史的経緯  
+3. v3.3　 　mruby/c VM のバージョン  
+4. RITE0300　実行できるバイトコードRITEバージョン  
+5. MRBW1.2　この通信プロトコルバージョン  
