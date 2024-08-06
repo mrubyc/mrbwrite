@@ -22,8 +22,8 @@
 
 #define VERSION_STRING   "mruby/c v3.3 RITE0300 MRBW1.2"
 
-const uint32_t IREP_START_ADDR = 0x08060000;
-const uint32_t IREP_END_ADDR   = 0x0807FFFF;
+const uint32_t IREP_START_ADDR = 0x08060000;	// This is sector 7
+const uint32_t IREP_END_ADDR   = 0x0807FFFF;	//  (see: cmd_clear function)
 
 static const char RITE[4] = "RITE";
 static const char WHITE_SPACE[] = " \t\r\n\f\v";
