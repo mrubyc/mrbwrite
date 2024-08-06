@@ -41,6 +41,7 @@ const char * const STR_CANCEL = "\x018";
 MrbWrite::MrbWrite( int argc, char *argv[] )
   : QCoreApplication( argc, argv ),
     qout_(stdout),
+    opt_timeout_(5),
     serial_baud_rate_(57600)
 {
   setApplicationName("mrbwrite");
@@ -50,7 +51,7 @@ MrbWrite::MrbWrite( int argc, char *argv[] )
     parse command line options.
   */
   QCommandLineParser parser;
-  parser.setApplicationDescription("mruby/c program writer.");
+  parser.setApplicationDescription("mruby/c program writer. version " APPLICATION_VERSION);
   parser.addHelpOption();
   parser.addVersionOption();
 
@@ -70,6 +71,10 @@ MrbWrite::MrbWrite( int argc, char *argv[] )
   QCommandLineOption showLinesOption("showline", tr("Show all lines."));
   parser.addOption(showLinesOption);
 
+  QCommandLineOption timeoutOption("timeout",
+				   tr("Command timeout."), tr("timeout"));
+  parser.addOption(timeoutOption);
+
   parser.process(*this);
 
   mrb_files_ = parser.positionalArguments();
@@ -79,6 +84,9 @@ MrbWrite::MrbWrite( int argc, char *argv[] )
   }
   opt_verbose_ = parser.isSet(verboseOption);
   opt_show_lines_ = parser.isSet(showLinesOption);
+  if( parser.isSet( timeoutOption ) ) {
+    opt_timeout_ = parser.value( timeoutOption ).toInt();
+  }
 
   /*
     start user program main function run()
@@ -132,7 +140,12 @@ void MrbWrite::run()
     connect target
   */
   if( connect_target() != 0 ) goto DONE;
-  clear_bytecode();
+
+  /*
+    clear existed bytecode.
+  */
+  flag_error = clear_bytecode();
+  if( flag_error && !target_rite_version_.isEmpty() ) goto DONE;
 
   /*
     open .mrb files and write target.
@@ -406,11 +419,15 @@ int MrbWrite::setup_serial_port()
 //================================================================
 /*! get a line from serial port with timeout.
 
-  @param	timtout_count	timeout counter.
+  @param	timeout_count	timeout counter.
   @return QString
 */
 QString MrbWrite::get_line( int timeout_count )
 {
+  if( timeout_count == 0 ) {
+    timeout_count = opt_timeout_ * 100;
+  }
+
   for( int i = 0; i < timeout_count; i++ ) {
     if( serial_port_.canReadLine()) {
       return serial_port_.readLine();

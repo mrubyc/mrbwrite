@@ -35,6 +35,7 @@ private:
   QTextStream qout_;		//!< console output stream.
   bool opt_verbose_;		//!< command line option --verbose
   bool opt_show_lines_;		//!< command line option --showline
+  int opt_timeout_;		//!< command line option --timeout
   QString line_;		//!< command line option parameter -l
   QStringList mrb_files_;	//!< .mrb file filename list.
   QSerialPort serial_port_;	//!< serial port object.
@@ -47,7 +48,7 @@ private:
   int write_file( QIODevice &file );
   void execute_program();
   int setup_serial_port();
-  QString get_line( int timeout_count = 500 );
+  QString get_line( int timeout_count = 0 );
   int chat( const char * );
   void show_lines();
 };
