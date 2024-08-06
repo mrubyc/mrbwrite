@@ -6,12 +6,17 @@
 
 ## How to compile
 
-クロスプラットフォームのために、Qt5 (https://www.qt.io/jp) を使用している。まずQtをインストール (https://download.qt.io/official_releases/qt/) してから、下記コマンドにてコンパイルする。
+クロスプラットフォームのために、Qt5 (https://www.qt.io/jp) を使用している。まずQt5をインストール (https://download.qt.io/official_releases/qt/) してから、下記コマンドにてコンパイルする。
 
 ```
 qmake
 make  # or gmake, nmake
 ```
+
+### 動作確認済の、Qtバージョン
+ * Windows  Qt5.12.12
+ * Mac  Qt5.12.12
+
 
 ## Deploy
 
