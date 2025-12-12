@@ -27,7 +27,7 @@
 
 #include "mrbwrite.h"
 
-#define VERBOSE(s) if( opt_verbose_ ) { qout_ << s << endl; }
+#define VERBOSE(s) if( opt_verbose_ ) { qout_ << s << Qt::endl; }
 
 const char * const STR_CANCEL = "\x018";
 
@@ -115,7 +115,7 @@ void MrbWrite::run()
     check --line option is specified.
   */
   if( line_.isEmpty() ) {
-    qout_ << tr("must specify line (-l option)") << endl;
+    qout_ << tr("must specify line (-l option)") << Qt::endl;
     goto DONE;
   }
 
@@ -123,14 +123,14 @@ void MrbWrite::run()
     check .mrb files exist?
   */
   if( mrb_files_.isEmpty() ) {
-    qout_ << tr("must specify .mrb file.") << endl;
+    qout_ << tr("must specify .mrb file.") << Qt::endl;
     goto DONE;
   }
 
   flag_error = 0;
   foreach( const QString filename, mrb_files_ ) {
     if( ! QFile::exists( filename )) {
-      qout_ << tr("File not found '") << filename << "'." << endl;
+      qout_ << tr("File not found '") << filename << "'." << Qt::endl;
       flag_error = 1;
     }
   }
@@ -153,11 +153,11 @@ void MrbWrite::run()
   foreach( const QString filename, mrb_files_ ) {
     QFile file( filename );
     if( !file.open( QIODevice::ReadOnly ) ) {
-      qout_ << tr("Can't open file '%1'.").arg(filename) << endl;
+      qout_ << tr("Can't open file '%1'.").arg(filename) << Qt::endl;
       goto DONE;
     }
 
-    qout_ << tr("Writing %1").arg(filename) << endl;
+    qout_ << tr("Writing %1").arg(filename) << Qt::endl;
     flag_error = write_file( file );
     file.close();
 
@@ -197,11 +197,11 @@ int MrbWrite::connect_target()
   int n_try = 0;
   int i, ret;
 
-  qout_ << tr("Start connection.") << endl;
+  qout_ << tr("Start connection.") << Qt::endl;
 
  REDO:
   if( ++n_try > 10 ) {
-    qout_ << tr("Try over 10 times.") << endl;
+    qout_ << tr("Try over 10 times.") << Qt::endl;
     return 1;
   }
 
@@ -214,10 +214,10 @@ int MrbWrite::connect_target()
   }
   switch( ret ) {
   case 1:
-    qout_ << tr("Can't open serial port line.") << endl;
+    qout_ << tr("Can't open serial port line.") << Qt::endl;
     return 1;
   case 2:
-    qout_ << tr("Can't set baud rate.") << endl;
+    qout_ << tr("Can't set baud rate.") << Qt::endl;
     return 1;
   }
   VERBOSE("Serial port is ready.");
@@ -246,10 +246,10 @@ int MrbWrite::connect_target()
   }
   qout_ << "\r                 \r";
   if( i == MAX_CONN ) {
-    qout_ << tr("Can't connect target device.") << endl;
+    qout_ << tr("Can't connect target device.") << Qt::endl;
     return 1;
   }
-  qout_ << tr("OK.") << endl;
+  qout_ << tr("OK.") << Qt::endl;
   sleep_ms( 100 );
   serial_port_.clear();
 
@@ -272,7 +272,7 @@ int MrbWrite::connect_target()
   }
 
   if( ret ) {
-    qout_ << tr("protocol version mismatch.") << endl;
+    qout_ << tr("protocol version mismatch.") << Qt::endl;
   } else {
     VERBOSE(tr("Target firmware version OK."));
   }
@@ -286,10 +286,10 @@ int MrbWrite::connect_target()
 */
 int MrbWrite::clear_bytecode()
 {
-  qout_ << tr("Clear existed bytecode.") << endl;
+  qout_ << tr("Clear existed bytecode.") << Qt::endl;
 
   if( chat("clear") < 0 ) {
-    qout_ << tr("Bytecode clear error.") << endl;
+    qout_ << tr("Bytecode clear error.") << Qt::endl;
     return 1;
   }
   VERBOSE("Clear bytecode OK.");
@@ -333,7 +333,7 @@ int MrbWrite::write_file( QIODevice &file )
   // check RITE version.
   if( !target_rite_version_.isEmpty() ) {
     if( target_rite_version_ != header ) {
-      qout_ << "mrb file RITE version mismatch." << endl;
+      qout_ << "mrb file RITE version mismatch." << Qt::endl;
       return 2;
     }
     VERBOSE(tr("RITE version '%1' check OK.").arg(target_rite_version_));
@@ -342,7 +342,7 @@ int MrbWrite::write_file( QIODevice &file )
   // send "write" command
   QString s = QString("write %1").arg( filesize );
   if( chat(s.toLocal8Bit()) < 0 ) {
-    qout_ << "command error." << endl;
+    qout_ << "command error." << Qt::endl;
     return 1;
   }
 
@@ -363,18 +363,18 @@ int MrbWrite::write_file( QIODevice &file )
     VERBOSE(tr("<== '%1'").arg(r.trimmed()));
 
     if( r.startsWith( STR_CANCEL )) {
-      qout_ << tr("transfer timeout") << endl;
+      qout_ << tr("transfer timeout") << Qt::endl;
       return 1;
     }
     if( r.startsWith("+DONE")) break;
     if( r.startsWith("-ERR")) {
-      qout_ << tr("transfer error. '%1'").arg(r.trimmed()) << endl;
+      qout_ << tr("transfer error. '%1'").arg(r.trimmed()) << Qt::endl;
       return 1;
     }
-    qout_ << r << endl;
+    qout_ << r << Qt::endl;
   }
 
-  qout_ << tr("OK.") << endl;
+  qout_ << tr("OK.") << Qt::endl;
   return 0;
 }
 
@@ -385,12 +385,12 @@ int MrbWrite::write_file( QIODevice &file )
 */
 void MrbWrite::execute_program()
 {
-  qout_ << tr("Start mruby/c program.") << endl;
+  qout_ << tr("Start mruby/c program.") << Qt::endl;
 
   if( chat("execute") >= 0 ) {
-    qout_ << tr("OK.") << endl;
+    qout_ << tr("OK.") << Qt::endl;
   } else {
-    qout_ << tr("execute error.") << endl;
+    qout_ << tr("execute error.") << Qt::endl;
   }
 }
 
@@ -459,7 +459,7 @@ int MrbWrite::chat( const char *cmd )
     if( r.startsWith("+DONE")) return 1;
     if( r.startsWith("-ERR")) return -1;
     if( r.startsWith( STR_CANCEL )) {
-      qout_ << "TIMEOUT!" << endl;
+      qout_ << "TIMEOUT!" << Qt::endl;
       return -2;
     }
     qout_ << r;
@@ -478,7 +478,7 @@ void MrbWrite::show_lines()
       .arg(info.portName())
       .arg(info.description())
       .arg(info.manufacturer());
-    qout_ << s << endl;
+    qout_ << s << Qt::endl;
   }
 }
 
