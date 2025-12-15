@@ -4,18 +4,30 @@
 
 コンパイル後のmrbファイル（バイトコード）を、シリアル通信を使ってターゲットに転送する。
 
-## How to compile
+## How to build
 
-クロスプラットフォームのために、Qt5 (https://www.qt.io/jp) を使用している。まずQt5をインストール (https://download.qt.io/official_releases/qt/) してから、下記コマンドにてコンパイルする。
+クロスプラットフォームのために、Qt6 (https://www.qt.io/jp) を使用している。
+オンラインインストーラを使って次の項目をインストールする。
+
+ * Qt6 Desktop
+ * Additional Libraries > Qt Serial Port 
+ 
+次に下記コマンドにてビルドする。
 
 ```
 qmake
 make  # or gmake, nmake
 ```
 
-### 動作確認済の、Qtバージョン
- * Windows  Qt5.12.12
- * Mac  Qt5.12.12
+### 動作確認済の、バージョン
+ * Windows
+    - Windows10 22H2
+    - Visual Studio Community 2022
+    - Qt6.8.3
+ * Mac
+    - MacOS 15.7.1 Sequoia
+    - Xcode 15.4
+    - Qt6.8.3
 
 
 ## Deploy
@@ -24,23 +36,32 @@ make  # or gmake, nmake
 
 ```
 mkdir ¥PATH¥TO¥DEPLOY¥mrbwrite
-copy mrbwrite.exe ¥PATH¥TO¥DEPLOY¥mrbwrite
+copy release¥mrbwrite.exe ¥PATH¥TO¥DEPLOY¥mrbwrite
 cd ¥PATH¥TO¥DEPLOY¥mrbwrite
 windeployqt mrbwrite.exe
 ```
 
 ### for Mac
 ```
-cp ~/Qt/*/clang_64/lib/QtCore.framework/Versions/5/QtCore .
-cp ~/Qt/*/clang_64/lib/QtSerialPort.framework/Versions/5/QtSerialPort .
-install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore" "@executable_path/QtCore" mrbwrite
-install_name_tool -change "@rpath/QtSerialPort.framework/Versions/5/QtSerialPort" "@executable_path/QtSerialPort" mrbwrite
+mkdir -p deploy/mrbwrite/QtFrameworks
+cp mrbwrite deploy/mrbwrite 
+cp -R ~/Qt/6.8.3/macos/lib/QtCore.framework deploy/mrbwrite/QtFrameworks
+cp -R ~/Qt/6.8.3/macos/lib/QtSerialPort.framework deploy/mrbwrite/QtFrameworks
+cd deploy/mrbwrite
+install_name_tool -change \
+  @rpath/QtCore.framework/Versions/A/QtCore \
+  @executable_path/QtFrameworks/QtCore.framework/QtCore mrbwrite
+install_name_tool -change \
+  @rpath/QtSerialPort.framework/Versions/A/QtSerialPort \
+  @executable_path/QtFrameworks/QtSerialPort.framework/QtSerialPort mrbwrite
+cd ..
+zip -s mrbwrite.zip mrbwrite
 ```
 
 ## How to use
 ```
 ./mrbwrite --showline   # show all lines
-./mrbwrite -l cu.USBSERIAL -s 57600 PROG1.mrb PROG2.mrb ...
+./mrbwrite -l cu.USBSERIAL -s 19200 PROG1.mrb PROG2.mrb ...
 ```
 
 
