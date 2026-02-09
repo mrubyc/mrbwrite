@@ -55,7 +55,7 @@ install_name_tool -change \
   @rpath/QtSerialPort.framework/Versions/A/QtSerialPort \
   @executable_path/QtFrameworks/QtSerialPort.framework/QtSerialPort mrbwrite
 cd ..
-zip -s mrbwrite.zip mrbwrite
+zip -r mrbwrite.zip mrbwrite
 ```
 
 ## How to use
