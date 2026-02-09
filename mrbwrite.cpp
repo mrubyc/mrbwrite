@@ -11,7 +11,7 @@
   </pre>
 */
 
-#define APPLICATION_VERSION "1.2.0"
+#define APPLICATION_VERSION "1.3.0"
 #define PROTOCOL_VERSION "MRBW1.2"
 
 #include <stdio.h>
