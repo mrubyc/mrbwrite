@@ -3,15 +3,16 @@
   mruby/c irep file writer.
 
   <pre>
-  Copyright (C) 2017- Kyushu Institute of Technology.
-  Copyright (C) 2017- Shimane IT Open-Innovation Center.
+  Copyright (C) 2017-      Kyushu Institute of Technology.
+  Copyright (C) 2017-2026 Shimane IT Open-Innovation Center.
+  Copyright (C) 2026-      Shimane Institute for Industrial Technology.
 
   This file is distributed under BSD 3-Clause License.
 
   </pre>
 */
 
-#define APPLICATION_VERSION "1.3.0"
+#define APPLICATION_VERSION "1.3.2"
 #define PROTOCOL_VERSION "MRBW1.2"
 
 #include <stdio.h>
@@ -20,6 +21,7 @@
 #include <QCommandLineParser>
 #include <QTextStream>
 #include <QTimer>
+#include <QElapsedTimer>
 #include <QSerialPortInfo>
 #include <QSerialPort>
 #include <QFile>
@@ -195,7 +197,9 @@ void MrbWrite::run()
 int MrbWrite::connect_target()
 {
   int n_try = 0;
-  int i, ret;
+  int ret;
+  QElapsedTimer timer;
+  const qint64 timeout_ms = 10000;
 
   qout_ << tr("Start connection.") << Qt::endl;
 
@@ -206,8 +210,10 @@ int MrbWrite::connect_target()
   }
 
   // trying to open serial port.
-  VERBOSE( tr("Trying to open '%1'.").arg(line_) );
-  for( i = 0; i < 50; i++ ) {
+  VERBOSE( tr("Opening serial port... '%1'.").arg(line_) );
+  timer.start();
+
+  while( !timer.hasExpired( timeout_ms ) ) {
     ret = setup_serial_port();
     if( ret != 1 ) break;
     sleep_ms( 100 );
@@ -223,32 +229,43 @@ int MrbWrite::connect_target()
   VERBOSE("Serial port is ready.");
 
   // trying to connect target
-  VERBOSE("Trying to connect target.");
-  const int MAX_CONN = 10;
-  for( i = 0; i < MAX_CONN; i++ ) {
+  VERBOSE("Connecting to target...");
+  timer.start();
+  qint64 elapsed = timer.elapsed();
+
+  while( !timer.hasExpired( timeout_ms ) ) {
+    sleep_ms( 100 );
+
+    // display a dot every second.
+    if( (timer.elapsed() - elapsed) >= 1000 ) {
+      qout_ << ".";
+      qout_.flush();
+      elapsed += 1000;
+    }
+    // check Serial port error.
     if( serial_port_.error() != QSerialPort::NoError ) {
       VERBOSE("Serial port error has detected. Retrying.");
       serial_port_.close();
       sleep_ms( 100 );
       goto REDO;
     }
-    sleep_ms( 100 );
+    // Send a sync (CRLF) code.
     serial_port_.clear();
     serial_port_.write("\r\n");
     serial_port_.flush();
-    VERBOSE("\n==> '\\r\\n' to target for connection start.");
-    qout_ << ".";
-    qout_.flush();
+    VERBOSE("\n==> Sent CRLF to the target to initialize communication.")
 
+    // Receive a response.
     QString r = get_line(50);
     VERBOSE(tr("<== '%1'").arg(r.trimmed()));
     if( r.startsWith("+OK mruby/c") ) break;
   }
   qout_ << "\r                 \r";
-  if( i == MAX_CONN ) {
+  if( timer.hasExpired( timeout_ms )) {
     qout_ << tr("Can't connect target device.") << Qt::endl;
     return 1;
   }
+
   qout_ << tr("OK.") << Qt::endl;
   sleep_ms( 100 );
   serial_port_.clear();
